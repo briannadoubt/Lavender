@@ -7,28 +7,73 @@
 
 import SwiftUI
 import SwiftData
+import FeedKit
+import Logs
 
+extension RSSFeedItem: Identifiable {
+    public var id: String {
+        self.guid?.value ?? UUID().uuidString
+    }
+}
+
+enum PodcastError: Error {
+    case missingFeedURL
+}
+
+@Logging
+struct SubscribeButton: View {
+    @Environment(\.modelContext) var modelContext
+    @Bindable var podcast: Podcast
+    let feed: FeedKit.RSSFeed?
+    @Query private var existingMatchingPodcasts: [Podcast]
+
+    init(podcast: Podcast, feed: FeedKit.RSSFeed?) {
+        _podcast = Bindable(podcast)
+        self.feed = feed
+        let collectionID = podcast.collectionID
+        var fetchDescriptor = FetchDescriptor<Podcast>(predicate: #Predicate { $0.collectionID == collectionID }, sortBy: [SortDescriptor(\.releaseDate, order: .forward)])
+        fetchDescriptor.fetchLimit = 1
+        _existingMatchingPodcasts = Query(fetchDescriptor)
+    }
+
+    var body: some View {
+        if existingMatchingPodcasts.isEmpty {
+            Button("Add to Library", systemImage: "plus") {
+                do {
+                    podcast.latestEpisode = Item(feed?.items?.first)
+                    modelContext.insert(podcast)
+                    try modelContext.save()
+                } catch {
+                    Self.logger.error("Failed to insert podcast from library with error: \(error)")
+                }
+            }
+        } else {
+            Button("Remove from Library", systemImage: "minus.circle") {
+                do {
+                    modelContext.delete(podcast)
+                    try modelContext.save()
+                } catch {
+                    Self.logger.error("Failed to remove podcast from library with error: \(error)")
+                }
+            }
+        }
+    }
+}
+
+@Logging
 struct PodcastView: View {
     @Environment(\.modelContext) var modelContext
     @Bindable var podcast: Podcast
 
-    @Query var feed: [RSSFeed]
-
-    init(podcast: Podcast) {
-        let podcastID = podcast.collectionID
-        var fetch = FetchDescriptor<RSSFeed>(predicate: #Predicate { $0.podcast?.collectionID == podcastID })
-        fetch.fetchLimit = 1
-        _feed = Query(fetch)
-        self.podcast = podcast
-    }
+    @State private var feed: FeedKit.RSSFeed?
 
     var body: some View {
         List {
             PodcastImage(podcast: podcast)
                 .frame(width: 300, height: 300)
-            if let feed = feed.first {
+            if let feed {
                 ForEach(feed.items ?? []) { item in
-                    ItemRow(podcast: podcast, item: item)
+                    ItemRow(podcast: podcast, item: Item(item))
                 }
             } else {
                 ProgressView("Loading feed...")
@@ -36,15 +81,37 @@ struct PodcastView: View {
         }
         .listStyle(.plain)
         .navigationTitle(podcast.collectionName ?? "Podcast")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                SubscribeButton(podcast: podcast, feed: feed)
+            }
+        }
         .task {
-            let container = modelContext.container
-            Task.detached {
-                let lavendar = Lavendar(modelContainer: container)
-                do {
-                    try await lavendar.loadFeed(for: podcast)
-                } catch {
-                    print("Failed to load feed with error:", error)
+            do {
+                guard let feedURL = podcast.feedURL else {
+                    throw PodcastError.missingFeedURL
                 }
+                let feedRequest = FeedParser(URL: feedURL)
+                try await withCheckedThrowingContinuation { continuation in
+                    feedRequest.parseAsync { result in
+                        switch result {
+                        case .success(let success):
+                            switch success {
+                            case .atom(_):
+                                fatalError()
+                            case .json(_):
+                                fatalError()
+                            case .rss(let feed):
+                                self.feed = feed
+                                continuation.resume()
+                            }
+                        case .failure(let failure):
+                            continuation.resume(throwing: failure)
+                        }
+                    }
+                }
+            } catch {
+                Self.logger.error("Failed to load feed with error: \(error)")
             }
         }
     }

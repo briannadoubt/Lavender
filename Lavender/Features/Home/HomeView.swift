@@ -13,7 +13,7 @@ struct HomeView: View {
             List {
                 UpNextSection()
             }
-            .navigationTitle(Tab.home.title)
+            .navigationTitle(LavenderScreen.home.title)
             .listStyle(.plain)
         }
     }

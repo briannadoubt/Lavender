@@ -20,27 +20,20 @@ extension WebService {
     var decoder: JSONDecoder { JSONDecoder() }
 
     func get<T: Decodable>(path: String, parameters: [String: String]? = nil) async throws -> T {
-        try await decode(
-            execute(
-                request: URLRequest(
-                    url: buildURL(
-                        path: path,
-                        parameters: parameters
-                    )
-                )
-            )
+        let url = try buildURL(
+            path: path,
+            parameters: parameters
         )
+        let request = URLRequest(url: url)
+        let data = try await execute(request: request)
+        let result: T = try decode(data)
+        return result
     }
 
-    private func buildURL(path: String, parameters: [String: String]?) throws-> URL {
-        var urlComponents = URLComponents()
-        urlComponents.scheme = scheme
-        urlComponents.host = host
-        urlComponents.path = path
-        urlComponents.queryItems = parameters?.map { (key: String, value: String) in
-            URLQueryItem(name: key, value: value)
-        }
-        guard let url = urlComponents.url else {
+    private func buildURL(path: String, parameters: [String: String]?) throws -> URL {
+        let parametersString = (parameters ?? [:]).map({"\($0)=\($1)"}).joined(separator: "&")
+        guard let url = URL(string: "\(scheme)://\(host)/\(path)?\(parametersString)") else {
+            assertionFailure("WHY")
             throw URLError(.badURL)
         }
         return url

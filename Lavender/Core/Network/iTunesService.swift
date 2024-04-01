@@ -16,7 +16,7 @@ struct iTunesAPI: WebService {
 
     func search(term: String) async throws -> SearchResult {
         guard let percentEncodedTerm = term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            throw PodcastActorError.failedToAddPercentEncodingToTerm
+            throw iTunesAPIError.failedToAddPercentEncodingToTerm
         }
         return try await get(
             path: "search",
@@ -29,8 +29,6 @@ struct iTunesAPI: WebService {
     }
 
     func lookupPodcast(collectionID: Int) async throws -> SearchResult {
-        // https://itunes.apple.com/lookup?id=1251196416&country=US&media=podcast&entity=podcastEpisode&limit=100
-        // https://itunes.apple.com/lookup?id=%3CcollectionId_forThePodcastShow%3E&media=podcast&entity=podcastEpisode&limit=100
         try await get(
             path: "lookup",
             parameters: [
@@ -53,4 +51,8 @@ struct iTunesAPI: WebService {
         let resultCount: Int
         let results: [Podcast.SearchResult]
     }
+}
+
+enum iTunesAPIError: Error {
+    case failedToAddPercentEncodingToTerm
 }

@@ -6,10 +6,11 @@
 //
 
 import SwiftUI
+import FeedKit
 
 struct ItemRow: View {
     @Bindable var podcast: Podcast
-    var item: RSSFeed.Item
+    @Bindable var item: Item
     var body: some View {
         NavigationLink(item.title ?? "No title") {
             ItemView(podcast: podcast, item: item)
@@ -19,11 +20,19 @@ struct ItemRow: View {
 
 struct ItemView: View {
     @Bindable var podcast: Podcast
-    var item: RSSFeed.Item
+    @Bindable var item: Item
+    @Environment(Player.self) var player
     var body: some View {
         List {
-            PodcastImage(podcast: podcast)
-                .frame(width: 300, height: 300, alignment: .center)
+            HStack {
+                PodcastImage(podcast: podcast)
+                    .frame(width: 300, height: 300, alignment: .center)
+                ItemPlayPauseButton(item: item) {
+                    player.currentlyPlaying?.feedItem = item
+                    player.currentlyPlaying?.podcast = podcast
+                }
+                .playbackControlSize(width: 44, height: 44)
+            }
             ItemDescriptionView(item: item)
         }
         .navigationTitle(item.title ?? "Episode")
@@ -32,7 +41,7 @@ struct ItemView: View {
 }
 
 struct ItemDescriptionView: View {
-    var item: RSSFeed.Item
+    @Bindable var item: Item
     var body: some View {
         if let itemDescription = item.itemDescription {
             Section {

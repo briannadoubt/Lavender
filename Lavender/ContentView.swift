@@ -10,20 +10,37 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Bindable var player: Player
 
     var body: some View {
-        AppTabView()
-            .task {
-                let container = modelContext.container
-                Task.detached {
-                    let brain = Lavendar(modelContainer: container)
-                    await brain.syncPodcasts()
-                }
+        Group {
+            LavenderTabView()
+        }
+        .environment(player)
+#if os(visionOS)
+        .ornament(attachmentAnchor: .scene(.bottom)) {
+            PlayerOrnament()
+                .environment(player)
+        }
+#else
+        .overlay(alignment: .bottom) {
+            if player.isPresented {
+                PlayerOrnament()
+                    .environment(player)
+                    .padding()
+                    .padding(.bottom, 44)
             }
+        }
+        .inspector(isPresented: $player.isFullScreen) {
+            PlayerView()
+                .environment(player)
+                .presentationDetents([.large])
+        }
+#endif
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Podcast.self, inMemory: true)
-}
+//#Preview {
+//    ContentView()
+//        .modelContainer(for: Podcast.self, inMemory: true)
+//}

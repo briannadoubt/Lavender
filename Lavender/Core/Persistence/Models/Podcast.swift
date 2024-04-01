@@ -45,10 +45,13 @@ final class Podcast {
         genres = result.genres
     }
     
-    var wrapperType: String? = nil
+    var currentlyPlaying: CurrentlyPlaying?
+    var latestEpisode: Item? = nil
+    var feed: RSSFeed? = nil
+    var wrapperType: SearchResult.WrapperType? = nil
     var kind: String? = nil
     var artistID: Int? = nil
-    var collectionID: Int
+    var collectionID: Int? = nil
     var trackID: Int? = nil
     var artistName: String? = nil
     var collectionName: String? = nil
@@ -84,8 +87,26 @@ final class Podcast {
 }
 
 extension Podcast {
-    struct SearchResult: Codable, Hashable {
-        let wrapperType: String?
+    struct SearchResult: Codable, Hashable, Identifiable {
+        var id: Int {
+            switch wrapperType {
+            case .track:
+                return trackID ?? -1
+            case .collection:
+                return collectionID
+            case .artist:
+                return artistID ?? -1
+            case nil:
+                return -1
+            }
+        }
+
+        let wrapperType: WrapperType?
+
+        enum WrapperType: String, Codable, Hashable {
+            case track, collection, artist
+        }
+
         let kind: String?
         let artistID: Int?
         let collectionID: Int
