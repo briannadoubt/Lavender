@@ -6,11 +6,43 @@
 //
 
 import SwiftUI
-import Dependencies
-import AVKit
-import Logs
-import MediaPlayer
-import SwiftData
+
+extension View {
+    @ViewBuilder
+    var playerOrnament: some View {
+        modifier(PlayerOrnamentViewModifier())
+    }
+}
+
+struct PlayerOrnamentViewModifier: ViewModifier {
+    @Environment(Player.self) private var player
+
+    func body(content: Content) -> some View {
+        @Bindable var player = player
+
+        content
+#if os(visionOS)
+            .ornament(attachmentAnchor: .scene(.bottom)) {
+                PlayerOrnament()
+                    .environment(self.player)
+            }
+#else
+            .overlay(alignment: .bottom) {
+                if player.isPresented {
+                    PlayerOrnament()
+                        .environment(self.player)
+                        .padding()
+                        .padding(.bottom, 44)
+                }
+            }
+            .inspector(isPresented: $player.isFullScreen) {
+                PlayerView()
+                    .environment(self.player)
+                    .presentationDetents([.large])
+            }
+#endif
+    }
+}
 
 struct PlayerOrnament: View {
     @Environment(Player.self) var player
@@ -24,7 +56,7 @@ struct PlayerOrnament: View {
             }
             if let title = player.currentlyPlaying?.feedItem?.title {
                 Text(title)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(2)
                     .frame(maxWidth: 320)
             }

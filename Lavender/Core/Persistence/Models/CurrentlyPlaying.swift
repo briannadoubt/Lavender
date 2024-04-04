@@ -18,6 +18,7 @@ final class CurrentlyPlaying {
     var player: Player? = nil
     @Attribute(.transformable(by: UIImageDataTransformer.self))
     var image: UIImage? = nil
+    var isPlaying: Bool = false
 
     init() {}
 }

@@ -6,8 +6,9 @@
 //
 
 import SwiftUI
+import NavigationGroup
 
-enum LavenderScreen: String, CaseIterable, Identifiable {
+enum LavenderScreen: String, Screen {
     case home
 //    case browse
 //    case topCharts
@@ -44,11 +45,6 @@ enum LavenderScreen: String, CaseIterable, Identifiable {
 //        case .library:
 //            return "square.stack"
         }
-    }
-
-    @ViewBuilder
-    var label: some View {
-        Label(title, systemImage: icon)
     }
 }
 

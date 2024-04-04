@@ -5,18 +5,16 @@
 //  Created by Brianna Zamora on 3/28/24.
 //
 
-import Foundation
+@preconcurrency import Foundation
 import SwiftData
-import Logs
 import Dependencies
 import AVKit
 import SwiftUI
-import MediaPlayer
+@preconcurrency import MediaPlayer
 import FeedKit
 
-@Logging
 @Model
-class Player {
+class Player: HasLogger {
     var currentlyPlaying: CurrentlyPlaying?
 
     var state: PlayerState = PlayerState.ready
@@ -41,7 +39,7 @@ extension Player {
 
     @MainActor
     var hasCurrentItem: Bool {
-        player.currentItem == nil
+        queue.currentItem == nil
     }
 
     @MainActor
@@ -50,8 +48,8 @@ extension Player {
     }
 
     @MainActor
-    var player: AVQueuePlayer {
-        AppDelegate.shared.player
+    var queue: AVQueuePlayer {
+        AppDelegate.shared.queue
     }
 
     @MainActor
@@ -150,8 +148,8 @@ extension Player {
             return
         }
 
-        player.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
-        player.replaceCurrentItem(
+        queue.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+        queue.replaceCurrentItem(
             with: {
                 let playerItem = AVPlayerItem(url: audioURL)
                 playerItem.nowPlayingInfo = [
@@ -191,7 +189,7 @@ extension Player {
         await setNowPlaying(feedItem, podcast: podcast)
         configurePlayer(feedItem, podcast: podcast)
 
-        player.play()
+        queue.play()
         self.state = .playing
     }
 
@@ -212,26 +210,26 @@ extension Player {
 
     @MainActor
     func pause() {
-        player.pause()
+        queue.pause()
         try? AVAudioSession.sharedInstance().setActive(false)
         self.state = .paused
     }
 
     @MainActor
     func resume() {
-        player.play()
+        queue.play()
         try? AVAudioSession.sharedInstance().setActive(true)
         self.state = .playing
     }
 
     @MainActor
     func seekBackword() {
-        player.seek(to: CMTimeSubtract(player.currentTime(), CMTimeMakeWithSeconds(15, preferredTimescale: 1)))
+        queue.seek(to: CMTimeSubtract(queue.currentTime(), CMTimeMakeWithSeconds(15, preferredTimescale: 1)))
     }
 
     @MainActor
     func seekForward() {
-        player.seek(to: CMTimeAdd(player.currentTime(), CMTimeMakeWithSeconds(30, preferredTimescale: 1)))
+        queue.seek(to: CMTimeAdd(queue.currentTime(), CMTimeMakeWithSeconds(30, preferredTimescale: 1)))
     }
 }
 

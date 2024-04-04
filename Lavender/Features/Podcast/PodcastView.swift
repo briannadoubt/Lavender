@@ -8,7 +8,6 @@
 import SwiftUI
 import SwiftData
 import FeedKit
-import Logs
 
 extension RSSFeedItem: Identifiable {
     public var id: String {
@@ -20,8 +19,7 @@ enum PodcastError: Error {
     case missingFeedURL
 }
 
-@Logging
-struct SubscribeButton: View {
+struct SubscribeButton: View, HasLogger {
     @Environment(\.modelContext) var modelContext
     @Bindable var podcast: Podcast
     let feed: FeedKit.RSSFeed?
@@ -60,8 +58,7 @@ struct SubscribeButton: View {
     }
 }
 
-@Logging
-struct PodcastView: View {
+struct PodcastView: View, HasLogger {
     @Environment(\.modelContext) var modelContext
     @Bindable var podcast: Podcast
 
@@ -88,7 +85,7 @@ struct PodcastView: View {
         }
         .task {
             do {
-                guard let feedURL = podcast.feedURL else {
+                guard let feedURL = podcast.feedURL?.withSecureHost else {
                     throw PodcastError.missingFeedURL
                 }
                 let feedRequest = FeedParser(URL: feedURL)
@@ -114,6 +111,17 @@ struct PodcastView: View {
                 Self.logger.error("Failed to load feed with error: \(error)")
             }
         }
+    }
+}
+
+extension URL {
+    var withSecureHost: URL? {
+        var components = URLComponents(url: self, resolvingAgainstBaseURL: true)
+        guard components?.scheme == "https" else {
+            components?.host = "https"
+            return components?.url
+        }
+        return self
     }
 }
 

@@ -6,10 +6,8 @@
 //
 
 import SwiftData
-import Logs
 
-@Logging
-struct Persistence {
+struct Persistence: HasLogger {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Podcast.self,

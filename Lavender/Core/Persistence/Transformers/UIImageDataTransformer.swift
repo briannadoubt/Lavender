@@ -6,12 +6,10 @@
 //
 
 import Foundation
-import Logs
 import SwiftUI
 
-@Logging
 @objc
-final class UIImageDataTransformer: ValueTransformer {
+final class UIImageDataTransformer: ValueTransformer, HasLogger {
     override class func transformedValueClass() -> AnyClass {
         return UIImage.self
     }

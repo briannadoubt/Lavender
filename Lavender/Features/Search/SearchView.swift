@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import Logs
 
 //struct PodcastSearchResults: View {
 //    @Query private var podcasts: [Podcast]
@@ -31,23 +30,24 @@ import Logs
 //    }
 //}
 
-@Logging
-struct PodcastSearch: View {
+extension DeveloperToolsSupport.ColorResource: @unchecked Sendable {}
+extension DeveloperToolsSupport.ImageResource: @unchecked Sendable {}
+
+struct PodcastSearch: View, HasLogger {
     @Environment(\.modelContext) private var modelContext
 
     @State private var query: String = ""
     @State private var searchResults: [Podcast.SearchResult] = []
 
-    func performSearch() {
-        Task {
-            guard query.count > 2 else { return }
-            let itunes = iTunesAPI()
-            do {
-                let result = try await itunes.search(term: query)
-                self.searchResults = result.results
-            } catch {
-                Self.logger.error("Failed to search for \"\(query)\" with error: \"\(error)\"")
-            }
+    @MainActor
+    func performSearch() async {
+        guard query.count > 2 else { return }
+        let itunes = iTunesAPI()
+        do {
+            let result = try await itunes.search(term: query)
+            self.searchResults = result.results
+        } catch {
+            Self.logger.error("Failed to search for \"\(query)\" with error: \"\(error)\"")
         }
     }
 
@@ -67,11 +67,11 @@ struct PodcastSearch: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: Text("Search for your favorite Podcasts, Audiobooks, and More")
         )
-        .onChange(of: query, debounceTime: .seconds(0.5)) { newQuery in
-            performSearch()
+        .task {
+
         }
-        .onSubmit(of: .search) {
-            performSearch()
+        .onChange(of: query, debounceTime: .seconds(0.5)) { newQuery in
+            await performSearch()
         }
     }
 }
@@ -95,10 +95,10 @@ extension View {
     @available(tvOS 16.0, *)
     @available(watchOS 9.0, *)
     @available(visionOS 1.0, *)
-    public func onChange<Value>(
+    public func onChange<Value: Sendable>(
         of value: Value,
         debounceTime: Duration,
-        perform action: @escaping (_ newValue: Value) async -> Void
+        perform action: @escaping @MainActor (_ newValue: Value) async -> Void
     ) -> some View where Value: Equatable {
         self.modifier(DebouncedChangeViewModifier(trigger: value, action: action) {
             try await Task.sleep(for: debounceTime)
@@ -122,7 +122,7 @@ extension View {
     @available(tvOS, deprecated: 16.0, message: "Use version of this method accepting Duration type as debounceTime")
     @available(watchOS, deprecated: 9.0, message: "Use version of this method accepting Duration type as debounceTime")
     @available(visionOS, deprecated: 1.0, message: "Use version of this method accepting Duration type as debounceTime")
-    public func onChange<Value>(
+    public func onChange<Value: Sendable>(
         of value: Value,
         debounceTime: TimeInterval,
         perform action: @escaping (_ newValue: Value) -> Void
@@ -133,7 +133,7 @@ extension View {
     }
 }
 
-private struct DebouncedChangeViewModifier<Value>: ViewModifier where Value: Equatable {
+private struct DebouncedChangeViewModifier<Value: Sendable>: ViewModifier where Value: Equatable {
     let trigger: Value
     let action: (Value) async -> Void
     let sleep: @Sendable () async throws -> Void
@@ -177,7 +177,7 @@ extension View {
         id value: T,
         priority: TaskPriority = .userInitiated,
         debounceTime: Duration,
-        _ action: @escaping () async -> Void
+        _ action: @escaping @Sendable () async -> Void
     ) -> some View where T: Equatable {
         self.task(id: value, priority: priority) {
             do { try await Task.sleep(for: debounceTime) } catch { return }
