@@ -13,10 +13,8 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var player: Player
 
-    @SceneStorage("com.briannadoubt.lavender.currentScreen") var currentScreen: LavenderScreen = .home
-
     var body: some View {
-        NavigationGroup("Lavender", currentScreen: $currentScreen) { screen in
+        NavigationGroup("Lavender", for: LavenderScreen.self) { screen in
             switch screen {
             case .home:
                 HomeView()
@@ -30,6 +28,13 @@ struct ContentView: View {
 }
 
 //#Preview {
-//    ContentView()
-//        .modelContainer(for: Podcast.self, inMemory: true)
+//    ContentView(player: Player())
+//        .modelContainer(
+//            for: [
+//                Podcast.self,
+//                RSSFeed.self,
+//                Item.self
+//            ],
+//            inMemory: true
+//        )
 //}

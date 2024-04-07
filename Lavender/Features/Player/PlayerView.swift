@@ -8,20 +8,18 @@
 import SwiftUI
 
 struct PlayerView: View {
-    @Environment(Player.self) var player
+    @Bindable var currentlyPlaying: CurrentlyPlaying
 
     var body: some View {
         NavigationStack {
             VStack {
-                let podcast = player.currentlyPlaying?.podcast
-                let title = player.currentlyPlaying?.feedItem?.title
                 Spacer()
-                if let podcast {
+                if let podcast = currentlyPlaying.podcast {
                     PodcastImage(podcast: podcast)
                         .scaledToFit()
                 }
                 Spacer()
-                if let title {
+                if let title = currentlyPlaying.feedItem?.title {
                     Text(title)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)

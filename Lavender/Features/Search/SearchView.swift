@@ -8,28 +8,6 @@
 import SwiftUI
 import SwiftData
 
-//struct PodcastSearchResults: View {
-//    @Query private var podcasts: [Podcast]
-//
-//    init(query: String) {
-//        let query = query
-//        _podcasts = Query(
-//            FetchDescriptor<Podcast>(
-//                predicate: #Predicate { podcast in
-//                    podcast.collectionName?.contains(query) ?? false
-////                    || ($0.artistName?.contains(query) ?? false)
-////                    || ($0.collectionCensoredName?.contains(query) ?? false)
-////                    || ($0.genres?.contains(query) ?? false)
-//                }
-//            )
-//        )
-//    }
-//
-//    var body: some View {
-//
-//    }
-//}
-
 extension DeveloperToolsSupport.ColorResource: @unchecked Sendable {}
 extension DeveloperToolsSupport.ImageResource: @unchecked Sendable {}
 
@@ -60,18 +38,15 @@ struct PodcastSearch: View, HasLogger {
             }
             .navigationTitle(LavenderScreen.search.title)
             .listStyle(.plain)
-        }
-        .searchDictationBehavior(.inline(activation: .onLook))
-        .searchable(
-            text: $query,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: Text("Search for your favorite Podcasts, Audiobooks, and More")
-        )
-        .task {
-
-        }
-        .onChange(of: query, debounceTime: .seconds(0.5)) { newQuery in
-            await performSearch()
+            .searchDictationBehavior(.inline(activation: .onLook))
+            .searchable(
+                text: $query,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: Text("Search for your favorite Podcasts, Audiobooks, and More")
+            )
+            .onChange(of: query, debounceTime: .seconds(0.5)) { newQuery in
+                await performSearch()
+            }
         }
     }
 }

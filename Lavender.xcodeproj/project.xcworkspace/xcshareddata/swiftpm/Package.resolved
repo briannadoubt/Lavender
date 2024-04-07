@@ -1,5 +1,5 @@
 {
-  "originHash" : "ee963cb17a5dbb585518dcbe592566d4a31fc12f0405a65b869c9c3f61d65caf",
+  "originHash" : "dca07cb369f8fef8ce8c16c91ce380251db5bca5940eb8b84e638066431dbbe9",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "68493a33d862c33c9a9f67ec729b3b7df1b20ade",
         "version" : "9.1.2"
-      }
-    },
-    {
-      "identity" : "navigationgroup",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/briannadoubt/NavigationGroup.git",
-      "state" : {
-        "revision" : "9d25e93cf79eea33a01fbe42bae71a60d8dd19e8",
-        "version" : "0.1.0"
       }
     },
     {

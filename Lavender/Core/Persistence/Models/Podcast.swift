@@ -45,8 +45,10 @@ final class Podcast {
         genres = result.genres
     }
     
-    var currentlyPlaying: CurrentlyPlaying?
-    var latestEpisode: Item? = nil
+    @Relationship(inverse: \CurrentlyPlaying.podcast)
+    var currentlyPlaying: CurrentlyPlaying? = nil
+    var inLibrary = false
+    @Relationship(inverse: \RSSFeed.podcast)
     var feed: RSSFeed? = nil
     var wrapperType: SearchResult.WrapperType? = nil
     var kind: String? = nil

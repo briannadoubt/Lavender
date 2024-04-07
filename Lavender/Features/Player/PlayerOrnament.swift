@@ -28,17 +28,19 @@ struct PlayerOrnamentViewModifier: ViewModifier {
             }
 #else
             .overlay(alignment: .bottom) {
-                if player.isPresented {
-                    PlayerOrnament()
-                        .environment(self.player)
-                        .padding()
-                        .padding(.bottom, 44)
-                }
+                PlayerOrnament()
+                    .environment(self.player)
+                    .padding()
+                    .padding(.bottom, 44)
             }
             .inspector(isPresented: $player.isFullScreen) {
-                PlayerView()
-                    .environment(self.player)
-                    .presentationDetents([.large])
+                if let currentlyPlaying = player.currentlyPlaying {
+                    PlayerView(currentlyPlaying: currentlyPlaying)
+                        .environment(self.player)
+                        .presentationDetents([.large])
+                } else {
+                    ContentUnavailableView("Nothing Playing", systemImage: "play.slash")
+                }
             }
 #endif
     }
@@ -64,37 +66,52 @@ struct PlayerOrnament: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            #if os(visionOS)
-            nowPlaying
+        VStack {
+            HStack(spacing: 12) {
+#if os(visionOS)
+                VStack {
+                    nowPlaying
+                }
                 .padding()
-            #else
-            Button {
-                player.isFullScreen = true
-            } label: {
-                nowPlaying
-            }
-            #endif
+#else
+                Button {
+                    player.isFullScreen = true
+                } label: {
+                    nowPlaying
+                }
+#endif
 
-            #if os(visionOS)
-            SeekBackwardButton()
-            #endif
-            
-            PlayPauseButton()
-            SeekForwardButton()
+#if os(visionOS)
+                SeekBackwardButton()
+#endif
+
+                PlayPauseButton()
+                SeekForwardButton()
+            }
+            .padding(.top, 8)
+            .padding(.horizontal, 8)
+
+            PlayerScrubber(
+                isInteractive: {
+#if os(visionOS)
+                    true
+#else
+                    false
+#endif
+                }()
+            )
         }
         .playbackControlSize(width: 24, height: 24)
-        .padding(.horizontal, 8)
-        #if os(visionOS)
+#if os(visionOS)
         .glassBackgroundEffect()
-        #else
+#else
         .background(.bar)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(radius: 10)
         .transition(.move(edge: .bottom))
-        #endif
         .padding(.bottom, -8)
-        .animation(.default, value: player.state)
+#endif
+//        .animation(.default, value: player.state)
         .animation(.default, value: player.isPresented)
     }
 }

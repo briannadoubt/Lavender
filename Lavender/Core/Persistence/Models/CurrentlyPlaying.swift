@@ -16,9 +16,9 @@ final class CurrentlyPlaying {
     var feedItem: Item? = nil
     var podcast: Podcast? = nil
     var player: Player? = nil
-    @Attribute(.transformable(by: UIImageDataTransformer.self))
-    var image: UIImage? = nil
     var isPlaying: Bool = false
+    var playPosition = 0.0
+    var duration = 0.0
 
     init() {}
 }

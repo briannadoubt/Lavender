@@ -32,14 +32,9 @@ extension Player {
         !isFullScreen
     }
 
-//    @MainActor
-//    func isPlaying(_ item: Item) -> Bool {
-//
-//    }
-
     @MainActor
     var hasCurrentItem: Bool {
-        queue.currentItem == nil
+        queue.currentItem != nil
     }
 
     @MainActor
@@ -75,11 +70,6 @@ extension Player {
 
         currentlyPlaying?.feedItem = feedItem
         currentlyPlaying?.podcast = podcast
-
-        if let imageURL = podcast.artworkUrl600 {
-            let image = await getCurrentlyPlayingImage(url: imageURL)
-            currentlyPlaying?.image = image
-        }
     }
 
     @MainActor
@@ -142,13 +132,30 @@ extension Player {
     }
 
     @MainActor
-    func configurePlayer(_ feedItem: Item, podcast: Podcast) {
+    private func getArtwork(from url: URL) async -> MPMediaItemArtwork {
+        let image = await getCurrentlyPlayingImage(url: url)
+        let artwork = MPMediaItemArtwork(boundsSize: CGSize(width: 600, height: 600)) { _ in
+            image ?? UIImage(named: "placeholder")!
+        }
+        return artwork
+    }
+
+    @MainActor
+    func configurePlayer(_ feedItem: Item, podcast: Podcast) async {
         guard let audioURL = feedItem.enclosure?.url else {
             Self.logger.error("RSSFeed.Enclosure.url is nil")
             return
         }
 
+        guard let imageURL = podcast.artworkUrl600 else {
+            Self.logger.error("No image URL found")
+            return
+        }
+
+        let artwork = await getArtwork(from: imageURL)
+
         queue.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+
         queue.replaceCurrentItem(
             with: {
                 let playerItem = AVPlayerItem(url: audioURL)
@@ -157,9 +164,7 @@ extension Player {
                     MPMediaItemPropertyArtist: podcast.collectionName ?? "Podcast",
                     MPMediaItemPropertyPodcastPersistentID: podcast.collectionID ?? 0,
                     MPMediaItemPropertyTitle: feedItem.title ?? "Lavender",
-                    MPMediaItemPropertyArtwork: MPMediaItemArtwork(boundsSize: CGSize(width: 600, height: 600)) { _ in
-                        self.currentlyPlaying?.image ?? UIImage(named: "placeholder")!
-                    }
+                    MPMediaItemPropertyArtwork: artwork
                 ]
                 return playerItem
             }()
@@ -187,7 +192,7 @@ extension Player {
         await configureSession()
         activateSession()
         await setNowPlaying(feedItem, podcast: podcast)
-        configurePlayer(feedItem, podcast: podcast)
+        await configurePlayer(feedItem, podcast: podcast)
 
         queue.play()
         self.state = .playing

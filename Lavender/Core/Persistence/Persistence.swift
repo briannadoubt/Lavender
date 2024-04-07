@@ -16,7 +16,6 @@ struct Persistence: HasLogger {
             CurrentlyPlaying.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        UIImageDataTransformer.register()
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
